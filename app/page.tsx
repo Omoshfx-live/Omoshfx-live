@@ -22,33 +22,33 @@ export default function Home() {
         const saved = localStorage.getItem("deriv_token");
         if (saved) ws.current?.send(JSON.stringify({ authorize: saved.trim() }));
       };
-      ws.current.onmessage = (msg) => {
-        const data = JSON.parse(msg.data);
+      ws.current.onmessage = (e) => {
+        const data = JSON.parse(e.data);
         if (data.tick) setTick(data.tick.quote);
         if (data.authorize) {
-          setAuth(`Connected ✅`);
+          setAuth("Connected ✅");
           setBalance(data.authorize.balance?.toString() || "0");
         }
-        if (data.error) setAuth(`Error: ${data.error.message}`);
+        if (data.error) setAuth(data.error.message);
       };
-      ws.current.onclose = () => { setStatus("Reconnecting..."); setTimeout(connect, 2000); };
+      ws.current.onclose = () => setTimeout(connect, 2000);
     };
     connect();
     return () => ws.current?.close();
   }, []);
-  const saveToken = () => {
+  const save = () => {
     localStorage.setItem("deriv_token", token.trim());
-    window.location.reload();
+    location.reload();
   };
   return (
-    <main className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4">
-      <h1 className="text-4xl font-black mb-2">OmoshFX</h1>
-      <p className="text-green-400 mb-4">{status}</p>
-      <div className="text-6xl font-mono my-6">{tick}</div>
-      <p className="mb-6">Balance: ${balance} | {auth}</p>
-      <div className="w-full max-w-sm bg-zinc-900 p-4 rounded-xl">
-        <input value={token} onChange={e=>setToken(e.target.value)} placeholder="Paste Deriv API Token" className="w-full p-3 rounded bg-black border border-zinc-700 mb-3" />
-        <button onClick={saveToken} className="w-full bg-white text-black font-bold py-3 rounded">SAVE & CONNECT</button>
+    <main style={{minHeight:'100vh', background:'black', color:'white', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'20px'}}>
+      <h1 style={{fontSize:'40px', fontWeight:'900'}}>OmoshFX</h1>
+      <p style={{color:'#4ade80', margin:'10px'}}>{status}</p>
+      <div style={{fontSize:'60px', fontFamily:'monospace', margin:'20px'}}>{tick}</div>
+      <p>Balance: ${balance} | {auth}</p>
+      <div style={{marginTop:'20px', width:'100%', maxWidth:'360px'}}>
+        <input value={token} onChange={e=>setToken(e.target.value)} placeholder="Paste NEW Deriv Token" style={{width:'100%', padding:'12px', background:'#111', border:'1px solid #333', color:'white', borderRadius:'8px'}} />
+        <button onClick={save} style={{width:'100%', marginTop:'10px', padding:'12px', background:'white', color:'black', fontWeight:'bold', borderRadius:'8px'}}>SAVE & CONNECT</button>
       </div>
     </main>
   );
