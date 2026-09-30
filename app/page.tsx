@@ -49,7 +49,6 @@ export default function Home() {
       <div className="w-full max-w-sm bg-zinc-900 p-4 rounded-xl">
         <input value={token} onChange={e=>setToken(e.target.value)} placeholder="Paste Deriv API Token" className="w-full p-3 rounded bg-black border border-zinc-700 mb-3" />
         <button onClick={saveToken} className="w-full bg-white text-black font-bold py-3 rounded">SAVE & CONNECT</button>
-        <p className="text-xs text-zinc-500 mt-2 text-center">app.deriv.com/account/api-token</p>
       </div>
     </main>
   );
