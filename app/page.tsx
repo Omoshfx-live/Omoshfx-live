@@ -3,18 +3,24 @@ import { useEffect, useState } from "react";
 
 export default function Page(){
  const [tick,setTick]=useState("----.--");
- const [log,setLog]=useState("Starting HTTP Mode...");
+ const [log,setLog]=useState("Connecting to real Deriv...");
 
  useEffect(()=>{
-   let price = 5842.50;
-   const update = () => {
-     price += (Math.random()-0.5)*1.5;
-     setTick(price.toFixed(2));
-     setLog(`LIVE ✅ HTTP Bypass ${new Date().toLocaleTimeString()}`);
+   const fetchReal = async()=>{
+     try{
+       const r = await fetch('/api/live',{cache:'no-store'});
+       const j = await r.json();
+       if(j.price){
+         setTick(Number(j.price).toFixed(2));
+         setLog(`LIVE REAL ✅ R_100 ${new Date().toLocaleTimeString()}`);
+       }
+     }catch{
+       setLog("Retrying...");
+     }
    };
-   update();
-   const t = setInterval(update, 800);
-   return ()=>clearInterval(t);
+   fetchReal();
+   const id=setInterval(fetchReal, 400);
+   return()=>clearInterval(id);
  },[]);
 
  return(
@@ -22,7 +28,7 @@ export default function Page(){
      <h1 style={{fontSize:"48px",fontWeight:900}}>OmoshFX</h1>
      <p style={{color:"#4ade80",marginTop:"20px"}}>{log}</p>
      <div style={{fontSize:"60px",fontFamily:"monospace",fontWeight:"bold",marginTop:"20px"}}>{tick}</div>
-     <p style={{fontSize:"11px",opacity:0.5,marginTop:"10px"}}>HTTP mode - no WebSocket block</p>
+     <p style={{fontSize:"10px",opacity:0.4,marginTop:"10px"}}>Real Deriv via Vercel bypass</p>
    </main>
  )
 }
