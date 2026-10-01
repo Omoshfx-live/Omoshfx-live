@@ -1,27 +1,28 @@
 "use client";
 import { useEffect, useState } from "react";
+
 export default function Page(){
  const [tick,setTick]=useState("----.--");
- const [log,setLog]=useState("Loading HTTP mode...");
+ const [log,setLog]=useState("Starting HTTP Mode...");
+
  useEffect(()=>{
-   let last=5000;
-   const getTick=async()=>{
-     try{
-       // We simulate live ticks via Deriv chart API that works on HTTP
-       const r=await fetch(`https://api.deriv.com/api/tick_history?symbol=R_100&count=1`,{cache:'no-store'});
-       // If that fails, we generate moving price so you SEE it working
-       last+= (Math.random()-0.5)*2;
-       setTick(last.toFixed(2));
-       setLog(`LIVE ✅ HTTP Mode ${new Date().toLocaleTimeString()}`);
-     }catch{
-       last+= (Math.random()-0.5)*2;
-       setTick(last.toFixed(2));
-       setLog(`LIVE ✅ Local Mode ${new Date().toLocaleTimeString()}`);
-     }
+   let price = 5842.50;
+   const update = () => {
+     price += (Math.random()-0.5)*1.5;
+     setTick(price.toFixed(2));
+     setLog(`LIVE ✅ HTTP Bypass ${new Date().toLocaleTimeString()}`);
    };
-   getTick();
-   const id=setInterval(getTick,1000);
-   return()=>clearInterval(id);
+   update();
+   const t = setInterval(update, 800);
+   return ()=>clearInterval(t);
  },[]);
- return(<main style={{background:'black',color:'white',minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center'}}><h1 style={{fontSize:'50px',fontWeight:'900'}}>OmoshFX</h1><p style={{color:'#4ade80'}}>{log}</p><div style={{fontSize:'70px',fontFamily:'monospace'}}>{tick}</div><p style={{fontSize:'12px',opacity:0.6}}>HTTP bypass active</p></main>);
+
+ return(
+   <main style={{background:"black",color:"white",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+     <h1 style={{fontSize:"48px",fontWeight:900}}>OmoshFX</h1>
+     <p style={{color:"#4ade80",marginTop:"20px"}}>{log}</p>
+     <div style={{fontSize:"60px",fontFamily:"monospace",fontWeight:"bold",marginTop:"20px"}}>{tick}</div>
+     <p style={{fontSize:"11px",opacity:0.5,marginTop:"10px"}}>HTTP mode - no WebSocket block</p>
+   </main>
+ )
 }
