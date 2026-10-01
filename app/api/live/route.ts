@@ -1,36 +1,41 @@
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-let lastTick: any = null;
-let ws: any = null;
-
-function ensureWS() {
-  if (ws) return;
-  // @ts-ignore
-  import('ws').then(({ default: WS }) => {
-    ws = new WS('wss://ws.derivws.com/websockets/v3?app_id=1089');
-    ws.on('open', () => ws.send(JSON.stringify({ ticks: 'R_100', subscribe: 1 })));
-    ws.on('message', (d: any) => {
-      try {
-        const j = JSON.parse(d.toString());
-        if (j.tick) lastTick = j.tick;
-      } catch {}
-    });
-    ws.on('close', () => { ws = null; setTimeout(ensureWS, 2000); });
-    ws.on('error', () => { ws = null; });
-  });
-}
-ensureWS();
-
 export async function GET() {
-  ensureWS();
-  if (lastTick) {
-    return new Response(JSON.stringify({ price: lastTick.quote }), {
-      headers: { 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': '*' },
+  try {
+    const price: any = await new Promise((resolve, reject) => {
+      // @ts-ignore
+      const ws = new WebSocket('wss://ws.derivws.com/websockets/v3?app_id=1089');
+      const timeout = setTimeout(() => {
+        try { (ws as any).close(); } catch {}
+        reject('timeout');
+      }, 7000);
+
+      (ws as any).onopen = () => {
+        ws.send(JSON.stringify({ ticks: 'R_100' }));
+      };
+      (ws as any).onmessage = (msg: any) => {
+        try {
+          const data = JSON.parse(msg.data);
+          if (data.tick) {
+            clearTimeout(timeout);
+            resolve(data.tick.quote);
+            try { (ws as any).close(); } catch {}
+          }
+        } catch {}
+      };
+      (ws as any).onerror = () => {
+        clearTimeout(timeout);
+        reject('ws error');
+      };
+    });
+
+    return new Response(JSON.stringify({ price }), {
+      headers: { 'Cache-Control': 'no-store' },
+    });
+  } catch (e: any) {
+    return new Response(JSON.stringify({ price: null, error: String(e) }), {
+      headers: { 'Cache-Control': 'no-store' },
     });
   }
-  await new Promise(r => setTimeout(r, 800));
-  return new Response(JSON.stringify({ price: lastTick?.quote || null }), {
-    headers: { 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': '*' },
-  });
 }
