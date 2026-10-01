@@ -1,40 +1,42 @@
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+import WebSocket from 'ws';
 
 export async function GET() {
   try {
-    const price: any = await new Promise((resolve, reject) => {
-      // @ts-ignore
+    const price = await new Promise<number>((resolve, reject) => {
       const ws = new WebSocket('wss://ws.derivws.com/websockets/v3?app_id=1089');
       const timeout = setTimeout(() => {
-        try { (ws as any).close(); } catch {}
-        reject('timeout');
-      }, 7000);
+        try { ws.close(); } catch {}
+        reject(new Error('timeout'));
+      }, 8000);
 
-      (ws as any).onopen = () => {
+      ws.on('open', () => {
         ws.send(JSON.stringify({ ticks: 'R_100' }));
-      };
-      (ws as any).onmessage = (msg: any) => {
+      });
+
+      ws.on('message', (data: any) => {
         try {
-          const data = JSON.parse(msg.data);
-          if (data.tick) {
+          const msg = JSON.parse(data.toString());
+          if (msg.tick && msg.tick.quote) {
             clearTimeout(timeout);
-            resolve(data.tick.quote);
-            try { (ws as any).close(); } catch {}
+            resolve(msg.tick.quote);
+            ws.close();
           }
         } catch {}
-      };
-      (ws as any).onerror = () => {
+      });
+
+      ws.on('error', (err) => {
         clearTimeout(timeout);
-        reject('ws error');
-      };
+        reject(err);
+      });
     });
 
     return new Response(JSON.stringify({ price }), {
       headers: { 'Cache-Control': 'no-store' },
     });
   } catch (e: any) {
-    return new Response(JSON.stringify({ price: null, error: String(e) }), {
+    return new Response(JSON.stringify({ price: null, error: e.message || 'ws error' }), {
       headers: { 'Cache-Control': 'no-store' },
     });
   }
